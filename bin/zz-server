@@ -1,0 +1,91 @@
+#!/usr/bin/env node
+
+let commander = require('commander')
+let path = require('path')
+
+commander
+	.version(require('../package').version, '-v, --version')
+	.option('-e, --ENTRY [value]', '设置模拟的接口入口文件path|默认为命令行运行目录')
+	.option('-k, --KEYPATH [value]', '设置https证书path|默认为命令行运行目录')
+	.option('-p, --PORT [value]', '设置http接口监听端口|默认为18080')
+	.option('-s, --SSLPORT [value]', '设置https接口监听端口|默认为18081')
+	.parse(process.argv)
+
+const kPath = path.join(process.cwd(), commander.KEYPATH || '');
+const dbPath = (commander.ENTRY || commander.args[0]);
+
+if(!dbPath) {
+	commander.help()
+	return
+}
+
+runServer()
+
+function runServer(){
+
+	let app = require('express')();
+	let fs = require('fs');
+	let http = require('http');
+	let https = require('https');
+	let privateKey  = fs.readFileSync(path.join(kPath, './private.pem'), 'utf8');
+	let certificate = fs.readFileSync(path.join(kPath, './file.crt'), 'utf8');
+	let credentials = {key: privateKey, cert: certificate};
+
+	let httpServer = http.createServer(app);
+	let httpsServer = https.createServer(credentials, app);
+	let PORT = (commander.PORT||18080);
+	let SSLPORT = (commander.SSLPORT||18081);
+
+	httpServer.listen(PORT, function() {
+	  console.log(`HTTP Server is running on: http://${getIP()}:${PORT}`);
+	});
+	httpsServer.listen(SSLPORT, function() {
+	  console.log(`HTTPS Server is running on: https://${getIP()}:${SSLPORT}`);
+	  require('child_process').exec(`open https://${getIP()}:${SSLPORT}`)
+	});
+
+	let db = require(path.join(process.cwd(), dbPath));
+	if(typeof db === 'function') db = db();
+
+	console.log("key entry: " + kPath);
+	console.log("db entry: " + path.join(process.cwd(), dbPath))
+
+	app.get('/', function(req, res) {
+    	console.log("https interface")
+	    res.status(200).json(db);
+	});
+
+	app.get('/:id', function(req, res) {
+
+		let callback = req.query.callback;
+		let id = req.params.id;
+		if(id == 'favicon.ico') return;
+
+	  	if(req.protocol === 'https') {
+			console.log(`get HTTPS request by: https://${getIP()}:${SSLPORT}/${id}`);
+			if(callback){
+	    		res.status(200).jsonp(db[id]);
+			}else
+	    	res.status(200).json(db[id]);
+	  	}
+	  	else {
+			console.log(`get HTTP request by: http://${getIP()}:${PORT}/${id}`);
+	    	res.status(200).jsonp(db[id]);
+	  	}
+	});
+}
+
+function getIP() {
+  	let os = require('os');
+  	let IPv4 = '127.0.0.1';
+  	let interfaces = os.networkInterfaces();
+  	for (let key in interfaces) {
+    	interfaces[key].some(function(details){
+      		if (details.family == 'IPv4' && key == 'en0') {
+        		IPv4 = details.address;
+        		return true;
+      		}
+    	});
+  	}
+  	return IPv4;
+}

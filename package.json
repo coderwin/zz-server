@@ -1,0 +1,27 @@
+
+{
+  "name": "zz-server",
+  "version": "1.0.0",
+  "description": "Mock a REST API fly",
+  "main": "bin/zz-server",
+  "preferGlobal": "true",
+  "bin": {
+    "zz-server": "./bin/zz-server"
+  },
+  "dependencies": {
+    "express": "^4.14.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "zz-server",
+    "server",
+    "mock",
+    "json-server",
+    "https"
+  ],
+  "author": "imChenJian",
+  "license": "MIT"
+}
