@@ -1,8 +1,8 @@
 # zz-server
 
->Mock a REST API fly(前后端分离中快速mock rest api)
-
->和json-server的使用方法一样，但是json-server不支持https接口的mock
+Mock a REST API fly(前后端分离中快速mock rest api)
+和json-server的使用方法一样，但是json-server不支持https接口的mock
+如果你熟悉nginx的话，也可以用nginx转发
 
 ## use
 
